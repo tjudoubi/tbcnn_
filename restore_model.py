@@ -42,7 +42,7 @@ def fileString_convert_vector(file_path_name):
     out_put = sess.run(
                     [pool_out],
                     feed_dict={
-                        nodes_node1: nodes11,
+                        nodes_node1: [nodes11],
                         children_node1: children1,
                     }
                 )
