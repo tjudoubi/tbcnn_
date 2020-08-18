@@ -155,3 +155,26 @@ def get_tree(file_name):
 # f = open('/home/doubi/opo_js/target_2/vector_2', 'w')
 # f.write(content)
 # f.close()
+def getData_finetune_withoutlabel(l,dictt,embeddings):
+    nodes11 = []
+    children11 = []
+    nodes22 = []
+    children22 = []
+    # label = l[1]
+    sample = dictt[l]
+    queue1 = [(sample[0], -1)]
+    while queue1:
+        node1, parent_ind1 = queue1.pop(0)
+        node_ind1 = len(nodes11)
+        queue1.extend([(sample[child], node_ind1) for child in node1.node_list])
+        children11.append([])
+        if parent_ind1 > -1:
+            children11[parent_ind1].append(node_ind1)
+        nodes11.append(embeddings[node1.type_])
+
+    children111 = []
+    # batch_labels = []
+    children111.append(children11)
+    children1 = _pad_nobatch(children111)
+    # batch_labels.append(label)
+    return nodes11, children1
