@@ -17,10 +17,10 @@ def init_net_finetune(feature_size, embeddingg):
         nodes1 = tf.expand_dims(nodes1, 0)
         # nodes2 = tf.expand_dims(nodes2, 0)
     with tf.name_scope('network'):
-        conv1 = conv_layer(1,600, nodes1, children1, feature_size)
+        conv1 = conv_layer(1,200, nodes1, children1, feature_size)
         pooling1 = pooling_layer(conv1)
         # pooling2 = pooling_layer(conv2)
-        h1 = hidden_layer(pooling1,600,50)
+        h1 = hidden_layer(pooling1,200,50)
         # out = out_layer(h1)
         # print(h1.shape)
     return nodes11, children1,h1

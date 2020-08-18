@@ -3,8 +3,11 @@ import tensorflow as tf
 import numpy as np
 import network3
 from sampleJS import get_tree
+from sampleJS import _pad_nobatch
+from sampleJS import _pad_vectors
 from sampleJS import getData_finetune
-from parameters import EPOCHS, LEARN_RATE
+from sampleJS import pad_batch_nodes
+from parameters import EPOCHS, LEARN_RATE,BATCH_SIZE
 from sklearn.metrics import precision_score, recall_score, f1_score
 
 def train_model(infile, embeddings):
@@ -15,6 +18,8 @@ def train_model(infile, embeddings):
     nodes_node1, children_node1, res = network3.init_net_finetune(num_feats,embeddingg)
     aaa = 1
     aaaa = 1
+    bbbb = 1
+    min_val_loss = 100.0
     # out_v = network3.out_layer(res)
     b = tf.constant(value=1, dtype=tf.float32)
     logits_evel = tf.multiply(res, b, name='logits_eval')
@@ -62,6 +67,8 @@ def train_model(infile, embeddings):
         line = "123"
         k = 0
         batch_q = []
+        nodes = []
+        childrenS = []
         while line:
             line = f.readline().rstrip('\n')
             l = line.split('\t')
@@ -72,21 +79,29 @@ def train_model(infile, embeddings):
                 continue
             k += 1
             nodes11,children1,batch_labels=getData_finetune(l,dictt,embeddings)
-            # print(children1)
-            batch_q.append([batch_labels])
+            childrenS.append(children1[0])
             batch_s = int(batch_labels[0])
             # bb_labels = [batch_labels[0] for _ in range(50)]
-            _, err, accur, r = sess.run(
-                [train_step, loss_node, acc, res],
-                feed_dict={
-                    nodes_node1: nodes11,
-                    children_node1: children1,
-                    labels_node: [batch_s],
-                }
-            )
-            train_loss += err
-            train_acc += accur
-            n_batch += 1
+            nodes.append(nodes11)
+            batch_q.append(batch_s)
+            if k%BATCH_SIZE == 0:
+                childrenS = _pad_nobatch(childrenS)
+                childrenS = _pad_vectors(childrenS)
+                nodes = pad_batch_nodes(nodes)
+                _, err, accur, r = sess.run(
+                    [train_step, loss_node, acc, res],
+                    feed_dict={
+                        nodes_node1: nodes,
+                        children_node1: childrenS,
+                        labels_node: batch_q,
+                    }
+                )
+                batch_q.clear()
+                nodes.clear()
+                childrenS.clear()
+                # train_loss += err
+                # train_acc += accur
+                # n_batch += 1
             # if aaa % 500 == 0:
             #     print('Epoch:', epoch,
             #           'Step:', aaa,
@@ -123,7 +138,7 @@ def train_model(infile, embeddings):
             err, accur, r = sess.run(
                 [loss_node, acc, res],
                 feed_dict={
-                    nodes_node1: nodes11,
+                    nodes_node1: [nodes11],
                     children_node1: children1,
                     labels_node: [dev_batch_s],
                 }
@@ -131,110 +146,92 @@ def train_model(infile, embeddings):
             dev_loss += err
             dev_acc += accur
             dev_batch += 1
-            if aaaa % 80 == 0:
-                print('Epoch:', epoch,
-                      'Step:', aaaa,
-                      'Loss:', dev_loss / dev_batch,
-                      'ACC:', dev_acc / dev_batch,
-                      'R:', r,
-                      )
-                ssss_acc.append(dev_acc / dev_batch)
-                ssss_loss.append(dev_loss / dev_batch)
-                # max_ACC = max(train_acc / n_batch, max_ACC)
-                # saver.save(sess, "./model_o/model.ckpt")
-                file3 = open('22ew.txt', 'a')
-                file4 = open('3.txt', 'a')
-                file3.write(str(dev_acc / dev_batch)+";")
 
-                file4.write(str(dev_loss / dev_batch)+";")
-                file3.close()
-                file4.close()
 
             aaaa += 1
 
         f.close()
 
+        ##################################################################################33
+        print('Epoch:', epoch,
+              'Step:', aaaa,
+              'Loss:', dev_loss / dev_batch,
+              'ACC:', dev_acc / dev_batch,
+              'R:', r,
+              )
+        step_loss = dev_loss / dev_batch
 
+        if step_loss < min_val_loss:
+            saver.save(sess, './model_o/model.ckpt')
+            min_val_loss = min(min_val_loss, dev_loss)
+        # ssss_acc.append(dev_acc / dev_batch)
+        # ssss_loss.append(dev_loss / dev_batch)
+        # max_ACC = max(train_acc / n_batch, max_ACC)
+        # saver.save(sess, "./model_o/model.ckpt")
+        file3 = open('dev_acc.txt', 'a')
+        file4 = open('dev_loss.txt', 'a')
+        file3.write(str(dev_acc / dev_batch) + ";")
 
+        file4.write(str(dev_loss / dev_batch) + ";")
+        file3.close()
+        file4.close()
+        #########################################################################
 
-        # correct_labels_dev = []
-        # predictions_dev = []
-        # for i in range(0, 15):
-        #     predictions_dev.append([])
-        # ff = open("./datasetForVariantsTBCCD/BCB/devdata.txt", 'r')
-        # line = "123"
-        # k = 0
-        # maxf1value = -1.0
-        # while line:
-        #     line = ff.readline().rstrip('\n')
-        #     l = line.split('\t')
-        #     if len(l) != 3:
-        #         break
-        #     if (l[0] in listrec) or (l[1] in listrec):
-        #         continue
-        #     label = l[2]
-        #     k += 1
-        #     nodes11, children1, nodes22, children2, _ = getData_finetune(l, dictt, embeddings)
-        #     output = sess.run([res],
-        #                       feed_dict={
-        #                           nodes_node1: nodes11,
-        #                           children_node1: children1,
-        #
-        #                       }
-        #                       )
-        #     correct_labels_dev.append(int(label))
-        #     threaholder = -0.7
-        #     for i in range(0, 15):
-        #         if output[0] >= threaholder:
-        #             predictions_dev[i].append(1)
-        #         else:
-        #             predictions_dev[i].append(-1)
-        #         threaholder += 0.1
-        # for i in range(0, 15):
-        #     f1score = f1_score(correct_labels_dev, predictions_dev[i], average='binary')
-        #     if f1score > maxf1value:
-        #         maxf1value = f1score
-        #         maxstep = i
-        #
-        # ff.close()
-        # correct_labels_test = []
-        # predictions_test = []
-        # ff = open("./datasetForVariantsTBCCD/BCB/testdata.txt", 'r')
-        # line = "123"
-        # k = 0
-        # while line:
-        #     line = ff.readline().rstrip('\n')
-        #     l = line.split('\t')
-        #     if len(l) != 3:
-        #         break
-        #     k += 1
-        #     label = l[2]
-        #
-        #     if (l[0] in listrec) or (l[1] in listrec):
-        #         continue
-        #     nodes11, children1, nodes22, children2, _ = getData_finetune(l, dictt, embeddings)
-        #     output = sess.run([res],
-        #                       feed_dict={
-        #                           nodes_node1: nodes11,
-        #                           children_node1: children1,
-        #                       }
-        #                       )
-        #     correct_labels_test.append(int(label))
-        #     threaholder = -0.7+maxstep*0.1
-        #     if output[0] >= threaholder:
-        #         predictions_test.append(1)
-        #     else:
-        #         predictions_test.append(-1)
-        # print("starttest:\n")
-        # print("threaholder:")
-        # print(threaholder)
-        # p = precision_score(correct_labels_test, predictions_test, average='binary')
-        # r = recall_score(correct_labels_test, predictions_test, average='binary')
-        # f1score = f1_score(correct_labels_test, predictions_test, average='binary')
-        # print("recall_test:" + str(r))
-        # print("precision_test:" + str(p))
-        # print("f1score_test:" + str(f1score))
-        # ff.close()
+        test_loss, test_acc, test_batch = 0, 0, 0
+        dev_acc_array = []
+        f = open('D:/datasetforTBCCD-master/test_getSentenceJS/JSC_test/testdata.txt', 'r')
+        line = "123"
+        k = 0
+        test_batch_q = []
+        while line:
+            line = f.readline().rstrip('\n')
+            l = line.split('\t')
+            # m = l[0] in listrec
+            if len(l) != 2:
+                break
+            if l[0] in listrec:
+                continue
+            k += 1
+            nodes11, children1, batch_labels = getData_finetune(l, dictt, embeddings)
+            # print(children1)
+            test_batch_q.append([batch_labels])
+            test_batch_s = int(batch_labels[0])
+            # bb_labels = [batch_labels[0] for _ in range(50)]
+            err, accur, r = sess.run(
+                [loss_node, acc, res],
+                feed_dict={
+                    nodes_node1: [nodes11],
+                    children_node1: children1,
+                    labels_node: [test_batch_s],
+                }
+            )
+            test_loss += err
+            test_acc += accur
+            test_batch += 1
+            # if bbbb % 282 == 0:
+
+            bbbb += 1
+
+        f.close()
+
+        print('Epoch_test:', epoch,
+              'Step:', bbbb,
+              'Loss_test:', test_loss / test_batch,
+              'ACC_test:', test_acc / test_batch,
+              'R_test:', r,
+              )
+        # ssss_acc.append(dev_acc / dev_batch)
+        # ssss_loss.append(dev_loss / dev_batch)
+        # max_ACC = max(train_acc / n_batch, max_ACC)
+        # saver.save(sess, "./model_o/model.ckpt")*+
+        file3 = open('test_acc.txt', 'a')
+        file4 = open('test_loss.txt', 'a')
+        file3.write(str(test_acc / test_batch) + ";")
+
+        file4.write(str(test_loss / test_batch) + ";")
+        file3.close()
+        file4.close()
+        # saver.save(sess, "./model_o/model.ckpt")
 
 
 if __name__ == '__main__':

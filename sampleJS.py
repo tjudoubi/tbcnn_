@@ -44,6 +44,24 @@ def _pad_nobatch(children):
     children = [[c + [0] * (child_len - len(c)) for c in sample] for sample in children]
     return children
 
+def _pad_vectors(children):
+    tree_len = max([len(n) for n in children])
+    child_len = max([len(c) for n in children for c in n])
+    zero_vec = [0]*child_len
+    for ele in children:
+        length = len(ele)
+        for _ in range(tree_len-length):
+            ele.append(zero_vec)
+
+    return children
+
+
+def pad_batch_nodes(nodes):
+    nodes_len = max([len(n) for n in nodes])
+    nodes = [c + [0] * (nodes_len - len(c)) for c in nodes]
+    return nodes
+
+
 function = 0
 
 # def dfs_norm(Tree_node,Tree):
@@ -83,32 +101,6 @@ def getData_finetune(l,dictt,embeddings):
     children1 = _pad_nobatch(children111)
     batch_labels.append(label)
     return nodes11, children1, batch_labels
-
-
-
-def getData_finetune_withoutlabel(l,dictt,embeddings):
-    nodes11 = []
-    children11 = []
-    nodes22 = []
-    children22 = []
-    # label = l[1]
-    sample = dictt[l]
-    queue1 = [(sample[0], -1)]
-    while queue1:
-        node1, parent_ind1 = queue1.pop(0)
-        node_ind1 = len(nodes11)
-        queue1.extend([(sample[child], node_ind1) for child in node1.node_list])
-        children11.append([])
-        if parent_ind1 > -1:
-            children11[parent_ind1].append(node_ind1)
-        nodes11.append(embeddings[node1.type_])
-
-    children111 = []
-    # batch_labels = []
-    children111.append(children11)
-    children1 = _pad_nobatch(children111)
-    # batch_labels.append(label)
-    return nodes11, children1
 
 
 def get_tree(file_name):
