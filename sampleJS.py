@@ -1,4 +1,19 @@
 import subprocess
+import jpype
+from jpype import *
+import os.path
+
+jarpath = os.path.abspath('.')
+jarpath = jarpath.replace('\\','/')
+jvmPath = 'C:\\Program Files\\Java\\jre1.8.0_131\\bin\\server\\jvm.dll'
+try:
+    jpype.startJVM(jvmPath, "-Djava.class.path=" + jarpath + "/AT1.jar", convertStrings=True)
+except:
+    pass
+JDClass = JClass("WriteAST")
+
+
+
 class Node:
     def __init__(self,type_,L,R,id,le):
         self.type_ = type_
@@ -104,24 +119,25 @@ def getData_finetune(l,dictt,embeddings):
 
 
 def get_tree(file_name):
-    print(file_name)
-    p = subprocess.Popen("java -jar AT1.jar "+file_name,shell=True,stdout=subprocess.PIPE)
-    text = str(p.stdout.read(),encoding = "utf-8")
-    p.wait()
-    # execute_file_name = "D:/datasetforTBCCD-master/Graduate_experiment-master/opo_js/test_target_file2/"+file_name+".txt"
+    # print(file_name)
+    # jpype.startJVM()
+
+    jd = JDClass()
+    text = jd.ASTString(file_name)
+    # jpype.shutdownJVM()
+
     text = text.rstrip('\r')
     # file=open(execute_file_name)
     # print(file_name)
     # text=file.read()
     list_x = text.split('\n')
-
     Tree_list = []
     list = []
     i = 0
     length = len(list_x)
     while len(list_x[i]) > 1:
         temp_ = list_x[i].split(' ,,, ')
-        print(temp_)
+        # print(temp_)
         type_ = temp_[0]
         L = int(temp_[1])
         R = int(temp_[2])
@@ -138,7 +154,7 @@ def get_tree(file_name):
     list = sorted(list,key=lambda x:(x.le, -x.id))
     for i in range(len(list)):
         if list[i].le == -1:
-            continue;
+            continue
         for j in range(i+1,len(list)):
             if list[i].le <= list[j].le and list[i].L >= list[j].L and list[i].R <= list[j].R:
                 Tree_list[list[j].id].node_list.append(list[i].id)
