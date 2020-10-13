@@ -2,8 +2,8 @@ import os
 import tensorflow as tf
 import numpy as np
 import network3
-from sampleJS import get_tree
-from sampleJS import getData_finetune_withoutlabel
+from sampleJS_withoutANTLR import get_tree
+from sampleJS_withoutANTLR import getData_finetune_withoutlabel
 from parameters import EPOCHS, LEARN_RATE
 # 加载模型
 sess = tf.Session()
@@ -33,7 +33,7 @@ for i in range(len(listchar)):
     embeddings_index[listchar[i]] = i
 # print(len(listchar),embeddings_index)
 
-def fileString_convert_vector(file_path_name):
+def subtree_convert_vector(file_path_name):
     # 将文件转为node和children两部分
     #########正文开始############
     global embeddings_index
@@ -51,7 +51,3 @@ def fileString_convert_vector(file_path_name):
                 )
     return out_put
     # print(out_put)
-
-
-
-

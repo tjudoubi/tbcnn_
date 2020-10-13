@@ -3,14 +3,14 @@ import jpype
 from jpype import *
 import os.path
 
-jarpath = os.path.abspath('.')
-jarpath = jarpath.replace('\\','/')
-jvmPath = 'C:\\Program Files\\Java\\jre1.8.0_131\\bin\\server\\jvm.dll'
-try:
-    jpype.startJVM(jvmPath, "-Djava.class.path=" + jarpath + "/AT1.jar", convertStrings=True)
-except:
-    pass
-JDClass = JClass("WriteAST")
+# jarpath = os.path.abspath('.')
+# jarpath = jarpath.replace('\\','/')
+# jvmPath = 'C:\\Program Files\\Java\\jre1.8.0_131\\bin\\server\\jvm.dll'
+# try:
+#     jpype.startJVM(jvmPath, "-Djava.class.path=" + jarpath + "/AT1.jar", convertStrings=True)
+# except:
+#     pass
+# JDClass = JClass("WriteAST")
 
 
 
@@ -117,13 +117,32 @@ def getData_finetune(l,dictt,embeddings):
     batch_labels.append(label)
     return nodes11, children1, batch_labels
 
+def get_content(file_name):
+    file_structure_name_list = file_name.split('/')
+    if len(file_structure_name_list) <= 1:
+        file_structure_name_list = file_name.split('\\')
+    length = len(file_structure_name_list)
+    for i in range(0,length-1):
+        if file_structure_name_list[i] == 'pool':
+            file_structure_name_list[i] = 'pool_structure'
+        file_structure_name_list[i] += '/'
+    file_structure_name_list[length-1] += '.structure'
+    file_structure_name = ""
+    for element in file_structure_name_list:
+        file_structure_name += element
+    # print(file_structure_name)
+    with open(file_structure_name, "r") as f:  # 打开文件
+        data = f.read()  # 读取文件
+    return data
+
+
 
 def get_tree(file_name):
     # print(file_name)
     # jpype.startJVM()
 
-    jd = JDClass()
-    text = jd.ASTString(file_name)
+    # jd = JDClass()
+    text = get_content(file_name)
     # jpype.shutdownJVM()
 
     text = text.rstrip('\r')
@@ -135,13 +154,15 @@ def get_tree(file_name):
     list = []
     i = 0
     length = len(list_x)
+    minn = 0x3f3f3f3f
     while len(list_x[i]) > 1:
         temp_ = list_x[i].split(' ,,, ')
         # print(temp_)
+        minn = min(minn, int(temp_[3]))
         type_ = temp_[0]
         L = int(temp_[1])
         R = int(temp_[2])
-        id = int(temp_[3])
+        id = int(temp_[3])-minn
         le = int(temp_[4])
         if type_.startswith('"') or type_.startswith("'") or type_.startswith('/*'):
             i += 1
@@ -152,6 +173,7 @@ def get_tree(file_name):
         Tree_list.append(node2)
         i += 1
     list = sorted(list,key=lambda x:(x.le, -x.id))
+
     for i in range(len(list)):
         if list[i].le == -1:
             continue
