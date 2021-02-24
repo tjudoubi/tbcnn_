@@ -250,6 +250,7 @@ if __name__ == '__main__':
         listchar.extend(list(set(l)))
         listchar = list(set(listchar))
         # print(1)
+    listchar.sort()
     fz.close()
     for l in listchar:
         listta.append(np.random.normal(0, 0.1, 100).astype(np.float32))
